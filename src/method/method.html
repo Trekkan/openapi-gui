@@ -198,7 +198,7 @@
                     </div>
                     <footer class="card-footer">
                         <p class="card-footer-item">
-                        <a v-on:click="addRequestBody()"><span class="button is-primary"><i class="fa fa-fw fa-plus"></i>Create Request Body</span></a>
+                        <a v-on:click="addRequestBody()"><span class="button is-primary"><i class="fa fa-fw fa-plus"></i>Create requestBody</span></a>
                         </p>
                     </footer>
                 </div>
@@ -222,6 +222,9 @@
                                 <input type="checkbox" class="checkbox" v-model="effectiveRequestBody.required">
                             </div>
                         </div>
+                        <div class="control">
+                            <a v-on:click="removeRequestBody()"><span class="button is-primary"><i class="fa fa-fw fa-trash"></i>Remove requestBody</span></a>
+                        </div>
                     </div>
 
                     <api-mediatype v-for="(content, mediatype) in effectiveRequestBody.content"
@@ -236,6 +239,14 @@
                                 </div>
                                 <div class="control">
                                     <span class="icon" :data-balloon="schemaTooltip"><a v-on:click="editMediaType(mediatype)"><i class="fa fa-fw fa-edit"></i></a></span>
+                                </div>
+                                <div class="control">
+                                    <span class="icon" data-balloon="Re-use shared schema"><a v-on:click="attachSchema()"><i class="fa fa-fw fa-recycle"></i></a></span>
+                                    <span :id="_uid" class="select hidden">
+                                        <select v-model="selectedSchema">
+								        <option v-for="(schemaVal,schema) in $root.container.openapi.components.schemas" :value="schema">{{schema}}</option>
+                                        </select>
+                                    </span>
                                 </div>
                                 <div class="control">
                                     <span class="icon" data-balloon="Remove media-type"><a v-on:click="removeMediaType()"><i class="fa fa-fw fa-trash"></i></a></span>
@@ -286,6 +297,21 @@
                             </div>
                         </div>
 						<div class="box">
+                          <div class="card" v-if="!response.content || Object.keys(response.content).length == 0">
+                            <div class="card-content">
+                              <p class="title">
+                                <a v-bind:href="specLink('#mediaTypeObject')">OpenAPI Specification MediaType Object</a>
+                              </p>
+                              <p class="subtitle">
+                                There are no media-types defined (they are optional).
+                              </p>
+                            </div>
+                            <footer class="card-footer">
+                              <p class="card-footer-item">
+                                <a v-on:click="addMediaType()"><span class="button is-primary"><i class="fa fa-fw fa-plus"></i>Create MediaType</span></a>
+                              </p>
+                            </footer>
+                          </div>
                             <api-mediatype v-for="(content, mediatype) in response.content"
                                 :content="content" :key="mediatype" :mediatype="mediatype" :container="response" inline-template>
                                 <div class="box">

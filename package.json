@@ -1,6 +1,6 @@
 {
     "name": "openapi-gui",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "description": "GUI / visual editor for creating and editing OpenApi / Swagger definitions",
     "main": "openapi-gui.js",
     "bin": {
@@ -8,7 +8,9 @@
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node openapi-gui.js"
+        "start": "node openapi-gui.js",
+        "docker": "docker build -t mermade/openapi-gui .",
+        "publish": "docker push mermade/openapi-gui"
     },
     "repository": {
         "type": "git",
@@ -28,13 +30,13 @@
         "express": "^4.15.5",
         "compression": "^1.6.2",
         "ejs": "^2.5.1",
-        "widdershins": "^3.4.2",
-        "shins": "^2.2.1-5"
+        "widdershins": "^4.0.1",
+        "shins": "^2.4.1-0"
     },
     "dependencies": {
-        "js-yaml": "^3.10.0",
-        "openapi-webconverter": "^1.3.10",
+        "openapi-webconverter": "^1.3.17",
         "opn": "^5.2.0",
-        "tiny-opts-parser": "0.0.3"
+        "tiny-opts-parser": "0.0.3",
+        "yaml": "^1.9.2"
     }
 }

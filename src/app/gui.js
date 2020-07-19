@@ -60,12 +60,23 @@ Vue.component('gui-main', {
 			if (e) e.scrollIntoView();
 		},
 
-		removeAll: function () {
+		removePaths: function () {
 			var self = this;
 			this.showConfirm('Are you sure?','This action will remove all paths, operations and parameters. Undo will be available.', function (result) {
 				if (result) {
 					self.$root.save();
 					self.openapi.paths = {};
+				}
+			});
+		},
+
+		removeAll: function () {
+			var self = this;
+			this.showConfirm('Are you sure?','This action will remove properties from the document. Undo will be available.', function (result) {
+				if (result) {
+					self.$root.save();
+					var schema = { openapi: self.openapi.openapi, info: { title: self.openapi.info.title, version: self.openapi.info.version}, paths: {} };
+			        Vue.set(self.$root.container,'openapi',preProcessDefinition(schema));
 				}
 			});
 		},
@@ -187,6 +198,7 @@ Vue.component('gui-main', {
                 schemaEditorClose();
             }.bind(this);
             $('#schemaModalTitle').text('Schema Editor - '+key);
+            $('#schemaModalCard').addClass('componentSchema'); // css fix
             $('#schemaModal').addClass('is-active');
 		},
 
@@ -378,10 +390,11 @@ Vue.component('api-secdef', {
 					Vue.delete(this.sd, 'name');
 				}
 				if (newVal != 'oauth2') {
-					Vue.delete(this.sd, 'flow');
+					Vue.delete(this.sd, 'flows');
 				}
 				if (newVal != 'http') {
 					Vue.delete(this.sd, 'scheme');
+                    Vue.delete(this.sd, 'bearerFormat');
 				}
 			}
 		},

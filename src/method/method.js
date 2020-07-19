@@ -49,10 +49,14 @@ Vue.component('api-method', {
         },
         addRequestBody : function() {
             if (!this.method.requestBody) {
-                var rb = {};
-                rb.content = { '*/*': { required: false, schema: {} } };
+                var rb = { required: false };
+                rb.content = { '*/*': { schema: {} } };
                 Vue.set(this.method,'requestBody',rb);
             }
+        },
+        removeRequestBody : function() {
+            this.$root.save();
+            Vue.delete(this.method,'requestBody');
         },
         addResponse : function() {
             var status = 200;
@@ -63,11 +67,20 @@ Vue.component('api-method', {
             response.description = 'Description';
             Vue.set(this.method.responses, status, response);
         },
+        renameResponse : function(status, newVal) {
+            Vue.set(this.method.responses,newVal,this.method.responses[status]);
+            Vue.delete(this.method.responses,status);
+        },
         addMediaType : function() {
             var rb = this.effectiveRequestBody;
             if (rb && rb.content && !rb.content['change/me']) {
                 Vue.set(rb.content,'change/me',{schema:{}});
             }
+        },
+        renameMediaType: function(oldName, newName) {
+            var rb = this.effectiveRequestBody;
+            Vue.set(rb.content, newName, rb.content[oldName]);
+            Vue.delete(rb.content, oldName);
         },
         addCallback : function() {
             if (!this.method.callbacks) {
@@ -167,7 +180,7 @@ Vue.component('api-method', {
             get : function() {
                 if (!this.method.requestBody) return null;
                 if (!this.method.requestBody.$ref) return this.method.requestBody;
-                return deref(this.method.requestBody, this.$root.container.openapi);
+                return deref(this.method.requestBody, this.$root.container.openapi, true);
             }
         },
         secType :  {
@@ -221,6 +234,21 @@ Vue.component('api-method', {
 
 Vue.component('api-response', {
     props: ["response", "status", "method"],
+    beforeMount : function() {
+        if (this.method.responses[this.status].$ref) {
+            var ptr = this.method.responses[this.status].$ref.substr(1); // remove #
+            try {
+                var def = new JSONPointer(ptr).get(this.$root.container.openapi);
+                for (var p in def) {
+                    this.response[p] = def[p];
+                }
+                delete this.response.$ref;
+            }
+            catch (ex) {
+                this.$root.showAlert('Could not find $ref '+this.method.responses[this.status].$ref);
+            }
+        }
+    },
     computed: {
         statusCode: {
             get: function () {
@@ -242,7 +270,21 @@ Vue.component('api-response', {
                 Vue.set(this.method.responses,'default',{description:'Default response'});
             }
         },
+        duplicateResponse: function () {
+            let newStatus = 'default';
+            if (this.method.responses.default) {
+                newStatus = 200;
+                while (this.method.responses[newStatus.toString()]) {
+                    newStatus++;
+                }
+                newStatus = newStatus.toString();
+            }
+            Vue.set(this.method.responses,newStatus,clone(this.method.responses[this.status]));
+        },
         addMediaType: function() {
+            if (!this.response.content) {
+                Vue.set(this.response,'content',{});
+            }
             if (!this.response.content['change/me']) {
                 Vue.set(this.response.content,'change/me',{schema:{}});
             }
@@ -270,7 +312,6 @@ Vue.component('api-mediatype', {
         },
 		schemaTooltip : {
 			get : function() {
-                // TODO for a $ref'd requestBody, $ref'd schemas may appear inline - set depth on deref?
 				if (!this.content.schema || !this.content.schema.$ref) {
 					return 'Edit inline schema';
 				}
@@ -279,7 +320,24 @@ Vue.component('api-mediatype', {
 					return 'Edit shared schema ('+schemaName+')';
 				}
 			}
-		}
+		},
+        selectedSchema: {
+            get : function() {
+                var ref = this.content.schema ? this.content.schema.$ref : '';
+                if (ref) {
+                    return ref.replace('#/components/schemas/','');
+                }
+                return undefined;
+            },
+            set : function(newVal) {
+                Vue.set(this.content,'schema',{ $ref: '#/components/schemas/'+newVal });
+                $('#'+this._uid).addClass('hidden');
+                Buefy.Toast.open({
+                    message: 'Schema '+newVal+' attached',
+                    type: 'is-success'
+                })
+            }
+        }
     },
     methods: {
         addMediaType: function () {
@@ -320,6 +378,9 @@ Vue.component('api-mediatype', {
             if (Object.keys(this.container.content).length==0) {
                 Vue.set(this.container.content,'application/json',{schema:{}});
             }
+        },
+        attachSchema : function(mediatype) {
+            $('#'+this._uid).removeClass('hidden');
         }
     },
     data: function () {
